@@ -11,9 +11,6 @@
   ],
   "scripts": {
     "build": "tsc --noEmit",
-    "check:all": "npm run ci:full",
-    "check:formatting": "biome format .",
-    "ci": "npm run format && npm run lint && npm run test",
     "dev": "tsc -w",
     "format": "biome format . --write",
     "lint": "biome check .",
