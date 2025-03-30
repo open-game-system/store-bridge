@@ -17,9 +17,9 @@
     "dev": "tsc -w",
     "format": "biome format . --write",
     "lint": "biome check .",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test": "vitest run --no-threads",
+    "test:coverage": "vitest run --coverage --no-threads",
+    "test:watch": "vitest --no-threads"
   },
   "exports": {
     "./client": "./src/client/index.ts",
