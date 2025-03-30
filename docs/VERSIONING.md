@@ -43,22 +43,43 @@ Our CI pipeline automatically handles version management:
    - PR builds create specialized versions for testing
    - Format: `major.YYYYMMDD.0-pr.number.hash`
    - Example: `1.20250330.0-pr.123.a1b2c3d`
-   - Published to npm with PR-specific tags like `pr-123`
+   - Published to GitHub Packages with PR-specific tags
    - CI adds a comment to the PR with installation instructions
+
+## Registry Strategy
+
+We use a dual-registry approach for different purposes:
+
+- **GitHub Packages**: Used for PR builds and development testing
+  - Accessible within the GitHub ecosystem
+  - Easy to integrate with our workflow
+  - Requires GitHub authentication
+
+- **npm Registry**: Used for main branch releases
+  - Publicly accessible without special authentication
+  - Distributed through the standard npm ecosystem
+  - Used for production/final releases
 
 ## Using Versions
 
-### Installation
+### Installing from npm (Production Releases)
 
 ```bash
 # Latest stable version
 npm install @open-game-system/store-bridge
 
-# Version from a specific PR
-npm install @open-game-system/store-bridge@pr-123
-
-# Exact version
+# Specific version
 npm install @open-game-system/store-bridge@1.20250330.0
+```
+
+### Installing from GitHub Packages (PR Testing)
+
+```bash
+# First configure access to GitHub Packages
+echo "@open-game-system:registry=https://npm.pkg.github.com" > .npmrc
+
+# Install a PR-specific version
+npm install @open-game-system/store-bridge@pr-123
 ```
 
 ### Version Dependency in package.json
@@ -78,6 +99,7 @@ npm install @open-game-system/store-bridge@1.20250330.0
 3. **Automatic Management**: No manual version bumping needed
 4. **Semver Compatibility**: Tools that expect semver still work with this format
 5. **Isolated PR Testing**: Each PR gets its own installable version for testing
+6. **Dual Registry Support**: Development versions in GitHub Packages, production in npm
 
 ## Comparison with Traditional Semver
 

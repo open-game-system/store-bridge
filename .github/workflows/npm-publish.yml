@@ -1,4 +1,4 @@
-name: Publish Package to npm
+name: Publish Package
 
 on:
   # Main branch trigger after version-bump
@@ -18,20 +18,23 @@ on:
       - 'tsconfig.json'
 
 jobs:
-  publish:
+  publish-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    # For workflow_run triggers, only run if the previous workflow succeeded
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
-      - name: Setup Node.js
+      - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@open-game-system'
       
       - name: Install dependencies
         run: npm ci
@@ -41,7 +44,6 @@ jobs:
       
       - name: Generate version for PR
         id: version
-        if: github.event_name == 'pull_request'
         run: |
           # Get base version from package.json
           CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -64,33 +66,30 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
       
-      - name: Use release version for main
-        id: main_version
-        if: github.event_name == 'workflow_run'
+      - name: Update package.json for GitHub Packages
         run: |
-          # For main branch builds after version bump, use the latest tag
-          LATEST_TAG=$(git describe --tags --abbrev=0)
-          VERSION=${LATEST_TAG#v} # Remove 'v' prefix
-          NPM_TAG="latest"
-          
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
+          # Temporarily update package.json to work with GitHub Packages
+          node -e '
+            const pkg = require("./package.json");
+            if (!pkg.repository || typeof pkg.repository === "string") {
+              pkg.repository = {
+                type: "git",
+                url: "https://github.com/open-game-system/store-bridge.git"
+              };
+            }
+            pkg.publishConfig = {
+              registry: "https://npm.pkg.github.com"
+            };
+            require("fs").writeFileSync("./package.json", JSON.stringify(pkg, null, 2));
+          '
       
-      - name: Publish PR version to npm
-        if: github.event_name == 'pull_request'
+      - name: Publish PR version to GitHub Packages
         run: npm publish --tag ${{ steps.version.outputs.npm_tag }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Publish main version to npm
-        if: github.event_name == 'workflow_run'
-        run: npm publish --tag ${{ steps.main_version.outputs.npm_tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Comment with installation instructions
         uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -100,11 +99,69 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `📦 Published version \`${version}\` to npm.
+              body: `📦 Published version \`${version}\` to GitHub Packages.
               
               Install with:
               \`\`\`bash
+              # Create or update .npmrc in your project
+              echo "@open-game-system:registry=https://npm.pkg.github.com" > .npmrc
+              
+              # Install the package
               npm install @open-game-system/store-bridge@${tag}
               \`\`\`
+              
+              Or add to your package.json:
+              \`\`\`json
+              "dependencies": {
+                "@open-game-system/store-bridge": "${tag}"
+              }
+              \`\`\`
               `
-            }); 
+            });
+
+  publish-main:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js for npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org/'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Use release version for main
+        id: main_version
+        run: |
+          # For main branch builds after version bump, use the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          VERSION=${LATEST_TAG#v} # Remove 'v' prefix
+          NPM_TAG="latest"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Make package public for npm
+        run: |
+          # Update package.json to ensure the package is public
+          node -e '
+            const pkg = require("./package.json");
+            pkg.publishConfig = {
+              access: "public"
+            };
+            require("fs").writeFileSync("./package.json", JSON.stringify(pkg, null, 2));
+          '
+      
+      - name: Publish main version to npm
+        run: npm publish --tag ${{ steps.main_version.outputs.npm_tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
