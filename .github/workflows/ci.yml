@@ -18,19 +18,19 @@ jobs:
           node-version: '18'
           cache: 'npm'
       
-      - name: Install dependencies
-        run: npm ci
-      
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
           version: 1.5.3
+
+      - name: Install dependencies
+        run: npm ci
       
       - name: Build
         run: npm run build
       
       - name: Lint
-        run: biome check .
+        run: npm run lint
       
       - name: Test
         run: npm run test
