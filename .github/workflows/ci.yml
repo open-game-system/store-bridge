@@ -26,14 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Format
-        run: biome format . --write
-        
+      - name: Check formatting and linting
+        run: biome check "src/**/*" "tests/**/*" "*.{json,md,js,ts}"
+      
       - name: Build
         run: npm run build
-      
-      - name: Lint
-        run: biome check .
       
       - name: Install Rollup native dependency
         run: npm install --save-dev @rollup/rollup-linux-x64-gnu
