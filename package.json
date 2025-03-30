@@ -4,18 +4,12 @@
   "description": "A universal bridge for web games and the OpenGame App.",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "files": [
-    "src",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["src", "README.md", "LICENSE"],
   "scripts": {
     "build": "tsc",
     "check:all": "npm run ci:full",
     "check:formatting": "npx @biomejs/biome format .",
-    "ci": "npm run ci:core",
-    "ci:core": "npm run format && npm run lint && npm run typecheck && npm run test",
-    "ci:full": "npm run ci:core",
+    "ci": "npm run format && npm run lint && npm run typecheck && npm run test",
     "dev": "tsc -w",
     "format": "npx @biomejs/biome format . --write",
     "lint": "npx @biomejs/biome check .",
@@ -52,14 +46,7 @@
     "typescript": "^5.2.2",
     "vitest": "^3.0.9"
   },
-  "keywords": [
-    "bridge",
-    "store",
-    "state",
-    "webview",
-    "game",
-    "react"
-  ],
+  "keywords": ["bridge", "store", "state", "webview", "game", "react", "react-native"],
   "author": "OpenGame System",
   "license": "MIT",
   "repository": {
