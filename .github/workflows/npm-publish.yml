@@ -2,7 +2,7 @@ name: Publish Package
 
 on:
   workflow_run:
-    workflows: ["Auto Version Bump", "CI"]
+    workflows: ["CI"]
     branches: [main]
     types:
       - completed
