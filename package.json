@@ -8,11 +8,11 @@
   "scripts": {
     "build": "tsc",
     "check:all": "npm run ci:full",
-    "check:formatting": "npx @biomejs/biome format .",
+    "check:formatting": "biome format .",
     "ci": "npm run format && npm run lint && npm run typecheck && npm run test",
     "dev": "tsc -w",
-    "format": "npx @biomejs/biome format . --write",
-    "lint": "npx @biomejs/biome check .",
+    "format": "biome format . --write",
+    "lint": "biome check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -31,7 +31,7 @@
     "typescript": "^5.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.5.3",
+    "@biomejs/biome": "1.5.3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.2.1",
     "@types/jest": "^29.5.4",
