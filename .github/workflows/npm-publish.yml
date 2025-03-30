@@ -1,14 +1,12 @@
 name: Publish Package to npm
 
 on:
-  # Main branch trigger
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'tsconfig.json'
+  # Main branch trigger after version-bump
+  workflow_run:
+    workflows: ["Auto Version Bump"]
+    branches: [main]
+    types:
+      - completed
   
   # PR branch trigger
   pull_request:
@@ -22,6 +20,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # For workflow_run triggers, only run if the previous workflow succeeded
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,32 +39,45 @@ jobs:
       - name: Build
         run: npm run build
       
-      - name: Generate version
+      - name: Generate version for PR
         id: version
+        if: github.event_name == 'pull_request'
         run: |
           # Get base version from package.json
           BASE_VERSION=$(node -p "require('./package.json').version")
           COMMIT_HASH=$(git rev-parse --short HEAD)
           TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
           
-          # DIFFERENT VERSIONING BASED ON WORKFLOW TYPE
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # PR workflow - include PR number in version and tag
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-            VERSION="${BASE_VERSION}-pr.${PR_NUMBER}.${TIMESTAMP}.${COMMIT_HASH}"
-            NPM_TAG="pr-${PR_NUMBER}"
-          else
-            # Main workflow - use dev tag
-            VERSION="${BASE_VERSION}-dev.${TIMESTAMP}.${COMMIT_HASH}"
-            NPM_TAG="dev"
-          fi
+          # PR workflow - include PR number in version and tag
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          VERSION="${BASE_VERSION}-pr.${PR_NUMBER}.${TIMESTAMP}.${COMMIT_HASH}"
+          NPM_TAG="pr-${PR_NUMBER}"
           
           npm version $VERSION --no-git-tag-version
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
       
-      - name: Publish to npm
+      - name: Use release version for main
+        id: main_version
+        if: github.event_name == 'workflow_run'
+        run: |
+          # For main branch builds after version bump, use the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          VERSION=${LATEST_TAG#v} # Remove 'v' prefix
+          NPM_TAG="latest"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Publish PR version to npm
+        if: github.event_name == 'pull_request'
         run: npm publish --tag ${{ steps.version.outputs.npm_tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Publish main version to npm
+        if: github.event_name == 'workflow_run'
+        run: npm publish --tag ${{ steps.main_version.outputs.npm_tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           
