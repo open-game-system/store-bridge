@@ -1,76 +1,71 @@
 {
   "name": "@open-game-system/store-bridge",
   "version": "0.1.0",
-  "description": "A universal bridge that connects web games and the OpenGame App through a shared state store.",
+  "description": "A universal bridge for web games and the OpenGame App.",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "files": [
-    "src"
+    "src",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
-    "lint": "biome lint ./src",
-    "lint:fix": "biome check --apply ./src",
-    "format": "biome format --write ./src",
-    "check": "biome check --apply ./src",
-    "typecheck": "tsc --noEmit",
-    "typecheck:examples": "tsc --project examples/web-vite-app/tsconfig.json --noEmit && tsc --project examples/native-expo-app/tsconfig.json --noEmit",
-    "ci": "pnpm lint && pnpm typecheck && pnpm test",
+    "build": "tsc --noEmit",
+    "dev": "tsc -w",
+    "format": "biome format . --write",
+    "lint": "biome check .",
     "test": "vitest run",
-    "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepare:examples:web": "cd examples/web-vite-app && pnpm install",
-    "prepare:examples:native": "cd examples/native-expo-app && pnpm install",
-    "prepare:examples": "pnpm prepare:examples:web && pnpm prepare:examples:native",
-    "examples:web": "cd examples/web-vite-app && pnpm run dev",
-    "examples:native": "cd examples/native-expo-app && pnpm start",
-    "examples:typecheck": "pnpm typecheck:examples"
+    "test:watch": "vitest"
   },
   "exports": {
-    ".": "./src/index.ts",
     "./client": "./src/client/index.ts",
     "./native": "./src/native/index.ts",
-    "./types": "./src/types/index.ts",
-    "./react": "./src/react.ts"
+    "./react": "./src/react/index.ts",
+    "./testing": "./src/testing/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.5.3",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^14.2.1",
+    "@types/jest": "^29.5.4",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.21",
+    "@vitejs/plugin-react": "^4.2.1",
+    "jest": "^29.6.4",
+    "jest-environment-jsdom": "^29.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.2.2",
+    "vitest": "^3.0.9"
   },
   "keywords": [
-    "opengame",
-    "store-bridge",
+    "bridge",
     "store",
-    "state-management",
+    "state",
     "webview",
-    "react-native",
-    "state-sync",
-    "json-patch"
+    "game",
+    "react",
+    "react-native"
   ],
   "author": "OpenGame System",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/open-game-system/store-bridge.git"
+    "url": "git+https://github.com/open-game-system/store-bridge.git"
   },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.13.10",
-    "@types/react": "^19.0.12",
-    "@types/use-sync-external-store": "^0.0.6",
-    "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.27.0",
-    "@typescript-eslint/parser": "^8.27.0",
-    "@vitest/coverage-v8": "^1.4.0",
-    "eslint": "^9.22.0",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.8.2",
-    "vite": "^5.2.4",
-    "vitest": "^1.4.0"
+  "bugs": {
+    "url": "https://github.com/open-game-system/store-bridge/issues"
   },
+  "homepage": "https://github.com/open-game-system/store-bridge#readme",
   "dependencies": {
-    "fast-json-patch": "^3.1.1",
-    "react": ">=16.8.0",
-    "react-dom": "^19.0.0",
-    "use-sync-external-store": "^1.4.0",
-    "uuid": "^11.1.0"
-  },
-  "peerDependencies": {
-    "react": ">=16.8.0"
+    "fast-json-patch": "^3.1.1"
   }
 }
