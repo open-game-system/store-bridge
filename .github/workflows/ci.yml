@@ -30,7 +30,7 @@ jobs:
         run: npm run build
       
       - name: Lint
-        run: npm run lint
+        run: biome check .
       
       - name: Test
         run: npm run test
