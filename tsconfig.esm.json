@@ -4,4 +4,4 @@
     "module": "esnext",
     "outDir": "dist/esm"
   }
-} 
+}

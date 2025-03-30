@@ -4,4 +4,4 @@
     "module": "commonjs",
     "outDir": "dist/cjs"
   }
-} 
+}
