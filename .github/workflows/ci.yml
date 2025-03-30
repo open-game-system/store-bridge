@@ -21,11 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install Biome globally
+        run: npm install -g @biomejs/biome@1.5.3
+      
       - name: Build
         run: npm run build
       
       - name: Lint
-        run: npm run lint
+        run: biome check .
       
       - name: Test
         run: npm run test
