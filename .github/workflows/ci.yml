@@ -32,5 +32,8 @@ jobs:
       - name: Lint
         run: biome check .
       
+      - name: Install Rollup native dependency
+        run: npm install --save-dev @rollup/rollup-linux-x64-gnu
+
       - name: Test
         run: npm run test
