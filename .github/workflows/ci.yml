@@ -27,7 +27,7 @@ jobs:
         run: npm ci
       
       - name: Check formatting and linting
-        run: biome check "src/**/*" "tests/**/*" "*.{json,md,js,ts}"
+        run: biome check . --files-ignore-unknown=true
       
       - name: Build
         run: npm run build
