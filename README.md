@@ -6,6 +6,24 @@ A universal bridge that connects web games and the OpenGame App through a shared
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+## 🔄 TypeScript-First Approach
+
+This library uses a TypeScript-first approach, exporting TypeScript source files directly without a build step. This offers several benefits:
+
+- **Enhanced Type Safety**: Consume the library with full TypeScript type information.
+- **Simplified Integration**: Import TypeScript files directly, no need to deal with a build step.
+- **Improved Developer Experience**: Better IDE support with direct access to source files.
+- **Type Compatibility**: Avoid version mismatches between your TypeScript version and the library's compiled output.
+
+To use the library with this approach, simply install it and import from the module paths:
+
+```typescript
+// Import directly from TypeScript source
+import { createBridge } from '@open-game-system/store-bridge';
+import { createClientBridge } from '@open-game-system/store-bridge/client';
+import type { Store } from '@open-game-system/store-bridge/types';
+```
+
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
@@ -14,26 +32,24 @@ A universal bridge that connects web games and the OpenGame App through a shared
 - [Getting Started](#-getting-started)
   - [Step 1: Define Your State and Event Types](#step-1-define-your-state-and-event-types)
   - [Step 2: Define Your Reducers (Native Side Only)](#step-2-define-your-reducers-native-side-only)
-  - [Step 3: Create a Bridge in Your Web App](#step-3-create-a-bridge-in-your-web-app)
-  - [Step 4: Create a Bridge in Your Native App](#step-4-create-a-bridge-in-your-native-app)
-  - [Step 5: Use React Integration with Helper Components](#step-5-use-react-integration-with-helper-components)
+  - [Step 3: Create a Bridge Context in Your Web App](#step-3-create-a-bridge-context-in-your-web-app)
+  - [Step 4: Create Store Contexts for Your Features](#step-4-create-store-contexts-for-your-features)
+  - [Step 5: Access Store State in Feature Components](#step-5-access-store-state-in-feature-components)
 - [React Hooks API Reference](#-react-hooks-api-reference)
   - [useStore](#usestore)
   - [useSelector](#useselector)
-  - [Correct Pattern for Using Hooks](#correct-pattern-for-using-hooks)
-  - [Store Availability Safety](#️-important-store-availability-safety)
-- [Store API Reference](#-store-api-reference)
-- [Bridge API Reference](#-bridge-api-reference)
-- [Type Safety and Serialization](#-type-safety-and-serialization)
-- [Server-Side Rendering (SSR) Support](#-server-side-rendering-ssr-support)
-  - [Validating External State](#validating-external-state)
-  - [Generating Initial State on the Server](#generating-initial-state-on-the-server)
-  - [Benefits of Built-in SSR Support](#benefits-of-built-in-ssr-support)
+  - [useBridge](#usebridge)
+  - [Store Availability Safety](#%EF%B8%8F-important-store-availability-safety)
+- [React Integration API Reference](#-react-integration-api-reference)
+  - [createBridgeContext](#createbridgecontext)
+  - [createStoreContext](#createstorecontext)
+  - [State Components](#state-components)
+  - [Component State Relationships](#component-state-relationships)
 - [Testing with Store Bridge](#-testing-with-store-bridge)
-  - [Creating Mock Bridges and Stores](#-creating-mock-bridges-and-stores)
-  - [Basic React Testing Example](#-basic-react-testing-example)
-  - [Store API Differences in Testing](#-store-api-differences-in-testing)
+  - [Creating Mock Bridges and Stores](#creating-mock-bridges-and-stores)
+  - [Basic React Testing Example](#basic-react-testing-example)
 - [Package Structure](#-package-structure)
+- [Development Status](#-development-status)
 
 ## 📋 Overview
 
@@ -222,296 +238,145 @@ export const anotherFeatureReducer = (state: AnotherFeatureState, event: Another
 };
 ```
 
-### Step 3: Create a Bridge in Your Web App
+### Step 3: Create a Bridge Context in Your Web App
 
-In your web application, create a bridge without reducers:
-
-```typescript
-// web-client.ts
-import { createBridge } from '@open-game-system/store-bridge/client';
-import type { BridgeStores } from './types';
-
-// Create a bridge with your types (no reducers on web client)
-const bridge = createBridge<BridgeStores>();
-
-export async function initWebApp() {
-  // Get a store for a feature (async - waits for initial state)
-  const myFeatureStore = await bridge.getStore('myFeature');
-  
-  // Dispatch events with type safety (no requestId needed)
-  myFeatureStore.dispatch({ 
-    type: 'activate',
-    id: 'session-123'
-  });
-
-  // Subscribe to state changes
-  myFeatureStore.subscribe(state => {
-    console.log('MyFeature state updated:', state);
-  });
-
-  // Get current state
-  const currentState = myFeatureStore.getState();
-  
-  // Check if running in WebView
-  const isInWebView = bridge.isInWebView();
-  console.log(`Running in WebView: ${isInWebView}`);
-}
-
-export { bridge };
-```
-
-### Step 4: Create a Bridge in Your Native App
-
-In your React Native application, create a bridge with reducers:
+In your web application, create a bridge context using the `createBridgeContext` function:
 
 ```typescript
-// native-bridge.ts
-import { createNativeBridge } from '@open-game-system/store-bridge/native';
+// bridge.ts - Bridge context creation
+import { createBridgeContext } from '@open-game-system/store-bridge/react';
 import type { BridgeStores } from './types';
-import { myFeatureReducer, anotherFeatureReducer } from './reducers';
 
-// Create a native bridge with reducers (required on native side)
-const bridge = createNativeBridge<BridgeStores>({
-  // Reducers are required on the native side to process events from the web side
-  reducers: {
-    myFeature: myFeatureReducer,
-    anotherFeature: anotherFeatureReducer
-  }
-});
+// Create a bridge context with your store types
+const BridgeContext = createBridgeContext<BridgeStores>();
 
-export { bridge };
+// Export for usage in other files
+export { BridgeContext };
 ```
 
-Using the bridge in a React Native component:
+Using the bridge context in your application:
 
 ```tsx
-// GameScreen.tsx
-import React, { useRef, useEffect } from 'react';
-import { View, Button, Text } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { bridge } from './native-bridge';
+// App.tsx - Simplified version
+import React from 'react';
+import { BridgeContext } from './bridge';
+import { MainContent } from './components/MainContent';
 
-interface GameScreenProps {
-  sessionId: string;
-}
-
-export function GameScreen({ sessionId }: GameScreenProps) {
-  const webViewRef = useRef<WebView>(null);
-  
-  useEffect(() => {
-    if (webViewRef.current) {
-      // Register this WebView for the store key
-      bridge.registerWebView('myFeature', webViewRef.current);
-      
-      // Initialize the state for this key
-      bridge.init('myFeature', {
-        isActive: false,
-        status: 'idle',
-        sessionId
-      });
-      
-      // Subscribe to state changes from the store on the native side
-      const unsubscribe = bridge.getStore('myFeature').then(store => {
-        return store.subscribe(state => {
-          console.log('Native side received state update:', state);
-        });
-      });
-      
-      return () => {
-        if (webViewRef.current) {
-          bridge.unregisterWebView('myFeature', webViewRef.current);
-        }
-        // Clean up subscription
-        unsubscribe.then(unsub => unsub());
-      };
-    }
-  }, [webViewRef.current, sessionId]);
-  
-  // Native side can modify state directly using produce
-  // This is more efficient than dispatching events on the native side
-  const activateFromNative = async () => {
-    const store = await bridge.getStore('myFeature');
-    
-    // Direct state mutation through produce (only available on native side)
-    store.produce(draft => {
-      draft.isActive = true;
-      draft.status = 'active';
-    });
-    
-    // The web application will automatically receive this state change
-  };
-  
-  // Alternative approach using dispatch (standard interface)
-  const activateViaEvent = async () => {
-    const store = await bridge.getStore('myFeature');
-    store.dispatch({
-      type: 'activate',
-      id: sessionId
-    });
-  };
-  
+export function App() {
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ padding: 10 }}>
-        <Text>Native Controls</Text>
-        <Button 
-          title="Activate (Direct)" 
-          onPress={activateFromNative} 
-        />
-        <Button 
-          title="Activate (Via Event)" 
-          onPress={activateViaEvent} 
-        />
-      </View>
-      <WebView
-        ref={webViewRef}
-        source={{ uri: `https://example.com/game/${sessionId}` }}
-        onMessage={event => bridge.processMessage(event)}
-        style={{ flex: 1 }}
-      />
-    </View>
+    <BridgeContext.Provider>
+      {/* A bridge will be created automatically */}
+      <MainContent />
+    </BridgeContext.Provider>
   );
 }
 ```
 
-### Step 5: Use React Integration with Helper Components
+### Step 4: Create Store Contexts for Your Features
 
-For React applications, we provide context providers and helper components:
+Now, create contexts for each feature store using the `createStoreContext` method from your bridge context:
 
-```tsx
-// App.tsx
-import React from 'react';
-import { 
-  createBridgeContext, 
-  BridgeProvider
-} from '@open-game-system/store-bridge/react';
-import { bridge } from './web-client';
-import type { BridgeStores } from './types';
+```typescript
+// contexts.ts - Create store contexts
+import { BridgeContext } from './bridge';
 
-// Create contexts for specific store keys
-const MyFeatureContext = createBridgeContext<BridgeStores>('myFeature');
-const AnotherFeatureContext = createBridgeContext<BridgeStores>('anotherFeature');
+// Create contexts for specific feature stores
+export const MyFeatureContext = BridgeContext.createStoreContext('myFeature');
+export const AnotherFeatureContext = BridgeContext.createStoreContext('anotherFeature');
 
-// Components for different states
-const UnavailableFeatureMessage = ({ text }: { text: string }) => (
+// UI components for different states (optional)
+export const UnavailableMessage = ({ text }: { text: string }) => (
   <div className="unavailable-message">{text}</div>
 );
 
-const LoadingSpinner = ({ text }: { text: string }) => (
-  <div className="loading">
-    <div className="spinner"></div>
+export const LoadingSpinner = ({ text }: { text: string }) => (
+  <div className="loading-spinner">
+    <div className="spinner" />
     <p>{text}</p>
   </div>
 );
+```
 
-// Main App component
-export function App() {
-  return (
-    <BridgeProvider bridge={bridge}>
-      <MainContent />
-    </BridgeProvider>
-  );
-}
+Using these contexts in your app:
 
-// Content component using helper components
-function MainContent() {
+```tsx
+// components/MainContent.tsx
+import React from 'react';
+import { BridgeContext } from '../bridge';
+import { 
+  MyFeatureContext, 
+  AnotherFeatureContext,
+  UnavailableMessage,
+  LoadingSpinner
+} from '../contexts';
+import { MyFeatureComponent } from './MyFeatureComponent';
+import { AnotherFeatureComponent } from './AnotherFeatureComponent';
+
+export function MainContent() {
   return (
     <div className="app-content">
-      {/* Use helper components to handle different states declaratively */}
+      {/* Global fallback for unsupported environment */}
+      <BridgeContext.Unsupported>
+        <div className="bridge-unavailable">
+          <h2>OpenGame App Required</h2>
+          <p>These features require the OpenGame App environment.</p>
+        </div>
+      </BridgeContext.Unsupported>
       
-      {/* Example 1: MyFeature */}
+      {/* Feature contexts already check for bridge support */}
       <section>
         <h2>My Feature</h2>
-        
-        <MyFeatureContext.Unavailable>
-          {/* Rendered when not in WebView */}
-          <UnavailableFeatureMessage text="This feature requires the OpenGame App." />
-        </MyFeatureContext.Unavailable>
-        
-        <MyFeatureContext.Uninitialized>
-          {/* Rendered when in WebView but store not ready yet */}
+        <MyFeatureContext.Initializing>
           <LoadingSpinner text="Connecting to feature..." />
-        </MyFeatureContext.Uninitialized>
+        </MyFeatureContext.Initializing>
         
         <MyFeatureContext.Initialized>
-          {/* Rendered when store is ready and state is available */}
           <MyFeatureComponent />
         </MyFeatureContext.Initialized>
       </section>
       
-      {/* Example 2: AnotherFeature */}
       <section>
         <h2>Another Feature</h2>
+        <AnotherFeatureContext.Initializing>
+          <LoadingSpinner text="Initializing feature..." />
+        </AnotherFeatureContext.Initializing>
         
         <AnotherFeatureContext.Initialized>
           <AnotherFeatureComponent />
         </AnotherFeatureContext.Initialized>
-        
-        <AnotherFeatureContext.Unavailable>
-          <UnavailableFeatureMessage text="This feature requires the OpenGame App." />
-        </AnotherFeatureContext.Unavailable>
       </section>
     </div>
   );
 }
-
-// Component using the store
-function MyFeatureComponent() {
-  // Get the store instance - typed correctly for the 'myFeature' key
-  const store = MyFeatureContext.useStore();
-  
-  // Use selector to efficiently access specific state
-  const isActive = MyFeatureContext.useSelector(state => state.isActive);
-  
-  const handleActivate = () => {
-    store.dispatch({
-      type: 'activate',
-      id: 'session-123'
-      // No requestId needed - handled by the library
-    });
-  };
-  
-  const handleDeactivate = () => {
-    store.dispatch({
-      type: 'deactivate'
-    });
-  };
-  
-  return (
-    <div className="feature-component">
-      <h3>Status: {isActive ? 'Active' : 'Inactive'}</h3>
-      <div className="buttons">
-        <button onClick={handleActivate}>Activate</button>
-        <button onClick={handleDeactivate}>Deactivate</button>
-      </div>
-    </div>
-  );
-}
-
-function AnotherFeatureComponent() {
-  const connected = AnotherFeatureContext.useSelector(state => state.connected);
-  const store = AnotherFeatureContext.useStore();
-  
-  return (
-    <div className="feature-component">
-      <h3>Connected: {connected ? 'Yes' : 'No'}</h3>
-      <button 
-        onClick={() => store.dispatch({ type: connected ? 'DISCONNECT' : 'CONNECT' })}
-      >
-        {connected ? 'Disconnect' : 'Connect'}
-      </button>
-    </div>
-  );
-}
-
-export { MyFeatureContext, AnotherFeatureContext };
 ```
 
 ## 📚 React Hooks API Reference
 
-The store-bridge provides React hooks for accessing your stores in a type-safe and efficient manner. These hooks are only available within the appropriate context providers and helper components.
+The store-bridge provides React hooks for accessing your stores in a type-safe and efficient manner through the context pattern.
 
-### `useStore`
+### Core Types and Interfaces
+
+First, let's understand the core interfaces:
+
+```typescript
+// Basic store interface
+interface Store<State, Event> {
+  getState(): State;
+  dispatch(event: Event): void;
+  subscribe(listener: (state: State) => void): () => void;
+}
+
+// Store definition with state and event types
+interface StoreDefinition<State, Event> {
+  state: State;
+  events: Event;
+}
+
+// Map of store keys to their definitions
+type BridgeStores = Record<string, StoreDefinition<any, any>>;
+```
+
+### useStore
 
 ```tsx
 // ✅ ONLY USE WITHIN .Initialized COMPONENTS
@@ -535,7 +400,7 @@ function Component() {
 
 **Important**: This hook will throw an error if used outside of an `.Initialized` component. The error message will be something like: "Cannot use useStore outside of a \<MyFeatureContext.Initialized\> component".
 
-### `useSelector`
+### useSelector
 
 ```tsx
 // ✅ ONLY USE WITHIN .Initialized COMPONENTS
@@ -556,64 +421,55 @@ function Component() {
 
 **Important**: This hook will throw an error if used outside of an `.Initialized` component. The error message will be similar to the one from `useStore`.
 
-### Correct Pattern for Using Hooks
-
-Always follow this pattern when using the hooks:
+### useBridge
 
 ```tsx
-function MyFeatureSection() {
-  return (
-    <>
-      {/* Only this component tree will have access to the store */}
-      <MyFeatureContext.Initialized>
-        <ComponentUsingHooks />
-      </MyFeatureContext.Initialized>
-      
-      {/* Always provide fallbacks for other states */}
-      <MyFeatureContext.Uninitialized>
-        <LoadingSpinner text="Connecting to feature..." />
-      </MyFeatureContext.Uninitialized>
-      
-      <MyFeatureContext.Unavailable>
-        <UnavailableFeatureMessage text="This feature requires the OpenGame App." />
-      </MyFeatureContext.Unavailable>
-    </>
-  );
-}
+// Import the context
+import { BridgeContext } from './bridge';
 
-// This component is guaranteed to have store access
-function ComponentUsingHooks() {
-  const store = MyFeatureContext.useStore();
-  const isActive = MyFeatureContext.useSelector(state => state.isActive);
+function Component() {
+  // Get the bridge instance
+  const bridge = BridgeContext.useBridge();
   
-  // Safe to use store here
-  return <div>...</div>;
+  // Now you can use bridge methods
+  const isSupported = bridge.isSupported();
+  
+  return (
+    <div>
+      <h3>Running in OpenGame App: {isSupported ? 'Yes' : 'No'}</h3>
+    </div>
+  );
 }
 ```
 
-This pattern ensures type safety and prevents runtime errors by guaranteeing that hooks are only used when the store is available and initialized.
+**Important**: This hook will throw an error if used outside of a `BridgeContext.Provider` component.
 
 ### ⚠️ Important: Store Availability Safety
 
-The bridge context hooks enforce strict safety rules to prevent runtime errors:
+The store hooks don't automatically enforce safety rules - you need to handle store availability correctly to prevent runtime errors:
 
 ```tsx
-// ❌ This will throw an error if used outside of an .Initialized component
+// ❌ This will cause runtime errors if the store isn't available
 function UnsafeComponent() {
-  // ERROR: "Cannot use useStore outside of a <MyFeatureContext.Initialized> component"
+  // If store is null/undefined, this will crash at runtime
   const store = MyFeatureContext.useStore(); 
   
-  // Rest of component will never execute
-  return <div>This won't render if the store isn't available</div>;
+  // This code will error if store doesn't exist
+  return <div>This crashes if store isn't available</div>;
 }
 
 // ✅ The correct way: Only access store inside Initialized component
 function SafeFeatureUsage() {
   return (
     <>
-      <MyFeatureContext.Unavailable>
+      <BridgeContext.Unsupported>
         <FallbackContent />
-      </MyFeatureContext.Unavailable>
+      </BridgeContext.Unsupported>
+      
+      {/* Feature contexts already check bridge support */}
+      <MyFeatureContext.Initializing>
+        <LoadingIndicator />
+      </MyFeatureContext.Initializing>
       
       <MyFeatureContext.Initialized>
         {/* Store is guaranteed to exist here */}
@@ -631,475 +487,412 @@ function ComponentThatUsesStore() {
 }
 ```
 
-This enforcement ensures that you never attempt to access a store that doesn't exist, preventing runtime errors. It also encourages proper handling of different connection states.
-
 Best practices for working with stores:
 
 1. **Always use helper components**: Wrap components that use the store in `.Initialized` components.
-2. **Provide fallbacks**: Use `.Uninitialized` and `.Unavailable` to handle all possible states.
+2. **Provide fallbacks**: Use `.Initializing` and `.Unsupported` to handle all possible states.
 3. **Colocate store access**: Keep store access logic close to where it's used, rather than passing store references down props.
 4. **Use selectors for performance**: Prefer `useSelector` for accessing specific parts of state to minimize re-renders.
 
-## 🔧 Store API Reference
+## 📘 React Integration API Reference
 
-Each feature store provides these methods:
+The React Integration layer provides context factories and hooks for using bridges and stores in React components.
 
-```typescript
-interface Store<State, Event> {
-  // Get the current state
-  getState(): State;
-  
-  // Dispatch an event to update state
-  // Events are sent to the native side when in WebView
-  dispatch(event: Event): void;
-  
-  // Subscribe to state changes
-  // Returns an unsubscribe function
-  subscribe(listener: (state: State) => void): () => void;
-}
-```
+### createBridgeContext
 
-Example usage:
+Creates the top-level bridge context with helper components, hooks, and a store context factory:
 
 ```typescript
-// Get a store instance (from context or bridge)
-const store = await bridge.getStore('myFeature');
-// or within a React component:
-const store = MyFeatureContext.useStore();
-
-// Get current state
-const state = store.getState();
-console.log('Current active state:', state.isActive);
-
-// Subscribe to changes
-const unsubscribe = store.subscribe(newState => {
-  console.log('State updated:', newState);
-});
-
-// Dispatch an event
-store.dispatch({
-  type: 'activate',
-  id: 'session-123'
-});
-
-// Later: unsubscribe to prevent memory leaks
-unsubscribe();
-```
-
-## 🌉 Bridge API Reference
-
-The Bridge object provides these methods:
-
-```typescript
-interface Bridge<Stores extends Record<string, { state: any; events: any }>> {
-  // Check if running inside a WebView
-  isInWebView(): boolean;
-  
-  // Get a store for a specific key
-  // Returns a promise that resolves when initial state is available
-  getStore<K extends keyof Stores>(key: K): Promise<Store<Stores[K]['state'], Stores[K]['events']>>;
-  
-  // Get all store keys
-  getStoreKeys(): (keyof Stores)[];
-  
-  // Check if a specific store is available
-  hasStore(key: keyof Stores): boolean;
-  
-  // Force refresh all stores (rarely needed)
-  refresh(): void;
-}
-```
-
-Example usage:
-
-```typescript
-// Create a bridge
-const bridge = createBridge<BridgeStores>();
-
-// Check environment
-if (bridge.isInWebView()) {
-  console.log('Running inside the OpenGame App');
-} else {
-  console.log('Running in a normal browser');
-}
-
-// Get a store (async - waits for initial state)
-const myFeatureStore = await bridge.getStore('myFeature');
-
-// Check if a store exists
-if (bridge.hasStore('specialFeature')) {
-  const specialStore = await bridge.getStore('specialFeature');
-  // use the store...
-}
-
-// Get all available store keys
-const availableStores = bridge.getStoreKeys();
-console.log('Available stores:', availableStores);
-```
-
-## 🔒 Type Safety and Serialization
-
-Since state and events are passed across the web/native boundary via JSON serialization, it's important to ensure your types only contain serializable values:
-
-```typescript
-// types.ts
-import { z } from 'zod';
-
-// ❌ AVOID: Types with non-serializable values
-type UnsafeState = {
-  createdAt: Date;       // Date objects don't serialize correctly
-  handler: () => void;   // Functions can't be serialized
-  domElement: HTMLElement; // DOM elements can't be serialized
-  complexData: Map<string, any>; // Maps, Sets don't serialize properly
-};
-
-// ✅ GOOD: Only use serializable types
-type SafeState = {
-  createdAt: string;     // ISO string for dates
-  status: string;
-  count: number;
-  isActive: boolean;
-  items: string[];       // Arrays are fine
-  config: {              // Nested objects are fine
-    theme: string;
-    settings: {
-      notifications: boolean;
-    }
-  }
-};
-
-// Using Zod to enforce serializable types
-const SerializableStateSchema = z.object({
-  createdAt: z.string(),
-  status: z.string(),
-  count: z.number(),
-  isActive: z.boolean(),
-  items: z.array(z.string()),
-  config: z.object({
-    theme: z.string(),
-    settings: z.object({
-      notifications: z.boolean()
-    })
-  })
-});
-
-// Use schema to validate that state is serializable
-type SerializableState = z.infer<typeof SerializableStateSchema>;
-
-// Helper function to validate state
-function validateSerializableState(state: unknown): SerializableState {
-  return SerializableStateSchema.parse(state);
-}
-
-// For type checking during development
-type IsJSONSerializable<T> = 
-  T extends string | number | boolean | null ? true :
-  T extends Function | Symbol | undefined ? false :
-  T extends Array<infer U> ? IsJSONSerializable<U> :
-  T extends object ? { [K in keyof T]: IsJSONSerializable<T[K]> } extends { [K in keyof T]: true } ? true : false :
-  false;
-
-// Type assertion to check if your state is serializable
-type AssertSerializable<T> = IsJSONSerializable<T> extends true ? T : never;
-
-// Usage example:
-type MyState = AssertSerializable<{
-  name: string;
-  count: number;
-  // Will cause type error:
-  // handler: () => void;
-}>;
-```
-
-### Best Practices for Serialization Safety
-
-1. **Only use plain data types**: strings, numbers, booleans, null, arrays, and plain objects
-2. **Convert non-serializable data**: Use ISO strings for dates, IDs for complex objects, etc.
-3. **Validate with Zod**: Define schemas and use them to validate data at runtime
-4. **Use type helpers**: Create utility types to verify serialization compatibility 
-5. **Test serialization**: Add tests that verify your state can be correctly serialized and deserialized
-
-## 🔄 Server-Side Rendering (SSR) Support
-
-While not a core requirement currently, the store-bridge has built-in support for server-side rendering (SSR). The `createBridge` API accepts an optional `initialState` parameter to hydrate stores with initial data:
-
-```typescript
-// client.ts
-import { createBridge } from '@open-game-system/store-bridge/client';
+import { createBridgeContext } from '@open-game-system/store-bridge/react';
 import type { BridgeStores } from './types';
-import { parseInitialState } from './utils';
 
-// Get validated initial state from query parameters or other sources
-const initialState = parseInitialState();
+// Create a bridge context with your store types
+const BridgeContext = createBridgeContext<BridgeStores>();
 
-// Create a bridge with initial state
-const bridge = createBridge<BridgeStores>({
-  // Optional initial state for any store keys
-  initialState
-});
-
-export { bridge };
+// The returned object includes:
+// - Provider: React component that creates a bridge automatically by default
+// - Supported: Component that renders children only when bridge is supported
+// - Unsupported: Component that renders children when bridge is unavailable
+// - useBridge: Hook to access the bridge instance
+// - createStoreContext: Function to create store contexts for specific features
 ```
 
-### Validating External State
+The `Provider` component can be used in two ways:
 
-When accepting state from external sources like query parameters, it's important to validate it:
-
-```typescript
-// utils.ts
-import { z } from 'zod';
-import type { BridgeStores, MyFeatureState } from './types';
-
-// Define Zod schemas for validating state from external sources
-const MyFeatureStateSchema = z.object({
-  isActive: z.boolean(),
-  status: z.string(),
-  sessionId: z.string()
-});
-
-// Make sure the schema matches your type definition
-type MyFeatureStateFromSchema = z.infer<typeof MyFeatureStateSchema>;
-// Type assertion to ensure schema matches your state type
-type _TypeCheck = Omit<MyFeatureState, keyof MyFeatureStateFromSchema> &
-                   Omit<MyFeatureStateFromSchema, keyof MyFeatureState>;
-
-// Extract and validate state from query parameters
-export function parseInitialState(): Partial<{
-  [K in keyof BridgeStores]: { state: BridgeStores[K]['state'] }
-}> {
-  const params = new URLSearchParams(window.location.search);
-  const serializedState = params.get('initialState');
-  
-  if (!serializedState) {
-    return {};
-  }
-  
-  try {
-    // Parse the state
-    const parsedState = JSON.parse(decodeURIComponent(serializedState));
-    
-    // Create a store-shaped object with validated state
-    const initialState: Partial<{
-      [K in keyof BridgeStores]: { state: BridgeStores[K]['state'] }
-    }> = {};
-    
-    // Only add state that passes validation
-    if (parsedState.myFeature) {
-      const result = MyFeatureStateSchema.safeParse(parsedState.myFeature);
-      if (result.success) {
-        initialState.myFeature = {
-          state: result.data
-        };
-      }
-    }
-    
-    return initialState;
-  } catch (error) {
-    console.warn('Failed to parse initial state from query', error);
-    return {};
-  }
-}
+1. With an automatically created bridge (recommended for normal use):
+```tsx
+// The provider will create a bridge automatically - this is the recommended approach
+<BridgeContext.Provider>
+  {/* Your app */}
+</BridgeContext.Provider>
 ```
 
-### Generating Initial State on the Server
+2. With an explicit bridge (primarily for testing and mocking):
+```tsx
+import { createMockBridge } from '@open-game-system/store-bridge/testing';
 
-On your server, generate a URL with the initial state embedded:
-
-```typescript
-// server.ts
-import { encode } from 'querystring';
-
-function generateGameUrl(gameId: string, initialState: any) {
-  const baseUrl = 'https://example.com/game';
-  const serializedState = encodeURIComponent(JSON.stringify(initialState));
-  
-  return `${baseUrl}/${gameId}?${encode({ initialState: serializedState })}`;
-}
-
-// Example usage in a route handler
-app.get('/launch-game/:gameId', (req, res) => {
-  const { gameId } = req.params;
-  
-  // Initial state for the game
-  const initialState = {
+// For testing/mocking in environments like Jest or Storybook
+const mockBridge = createMockBridge<BridgeStores>({
+  isSupported: true,
+  stores: {
     myFeature: {
-      isActive: false,
-      status: 'pending',
-      sessionId: gameId
+      initialState: { /* test state */ }
     }
-  };
-  
-  // Generate a URL with embedded state
-  const gameUrl = generateGameUrl(gameId, initialState);
-  
-  // Redirect to the game with initial state
-  res.redirect(gameUrl);
+  }
 });
+
+// Used mainly in testing scenarios
+<BridgeContext.Provider bridge={mockBridge}>
+  {/* Components under test */}
+</BridgeContext.Provider>
 ```
 
-### Benefits of Built-in SSR Support
+In production code, you rarely need to create and pass a bridge explicitly. The Provider will handle this for you automatically.
 
-1. **Performance**: Users see meaningful content immediately without waiting for API calls
-2. **SEO**: Search engines can index your content more effectively
-3. **User Experience**: Reduces perceived loading time and flickering
-4. **Resilience**: App can function with predefined state even before bridge connection is established
+### createStoreContext
 
-The bridge will automatically use the initial state until a connection with the native side is established, at which point it will synchronize with the native state. This provides a seamless experience for users, even in environments with slow connections.
+Create store contexts for specific features using the `createStoreContext` method from your bridge context:
+
+```typescript
+// After creating a bridge context
+const BridgeContext = createBridgeContext<BridgeStores>();
+
+// Create a store context for a specific feature
+const MyFeatureContext = BridgeContext.createStoreContext('myFeature');
+```
+
+Each store context provides:
+
+1. Two component types:
+   - `Initializing`: Children render when the bridge is available but the store is still loading
+   - `Initialized`: Children render when the store is ready for use
+
+2. Two hooks:
+   - `useStore`: Returns the store instance
+   - `useSelector`: Efficiently accesses specific parts of state with memoization
+
+3. A Provider component (exclusively for testing):
+   - `Provider`: Takes a required `store` prop to bypass the bridge and directly inject a store
+   - This is not meant for typical application usage - only for testing scenarios
+
+**Important**: In normal application code, you never need to use the store context's Provider component. Use the `BridgeContext.Provider` instead, which automatically connects to all stores.
+
+### State Components
+
+The bridge context provides helper components:
+
+```tsx
+// Import the BridgeContext
+import { BridgeContext } from './bridge';
+
+// For unsupported environments (web browsers, etc)
+<BridgeContext.Unsupported>
+  <p>This feature requires the OpenGame App</p>
+</BridgeContext.Unsupported>
+
+// For supported environments (within OpenGame App)
+<BridgeContext.Supported>
+  <p>You're using the OpenGame App!</p>
+</BridgeContext.Supported>
+```
+
+Each store context provides two components to handle different states:
+
+```tsx
+// Import a feature context
+import { MyFeatureContext } from './contexts';
+
+// For when the store is still initializing
+<MyFeatureContext.Initializing>
+  <LoadingSpinner text="Connecting..." />
+</MyFeatureContext.Initializing>
+
+// For when the store is ready
+<MyFeatureContext.Initialized>
+  {/* Store is guaranteed to be available here */}
+  <FeatureContent />
+</MyFeatureContext.Initialized>
+```
+
+**Important**: Store contexts automatically check for bridge support, so you don't need to wrap them in `BridgeContext.Supported` in most cases.
+
+### Component State Relationships
+
+Here's how the different component states work together:
+
+```
+BridgeContext.Unsupported: Active when bridge is unavailable
+Feature contexts: Only try to initialize when bridge is available
+
+MyFeatureContext.Initializing: Active when bridge is supported but store isn't ready
+MyFeatureContext.Initialized: Active when bridge is supported and store is ready
+```
+
+This means you typically only need to use `BridgeContext.Supported` when you want to render UI that depends on bridge support but isn't tied to any specific store.
 
 ## 🧪 Testing with Store Bridge
 
-The store-bridge provides testing utilities that make your components easy to test without real network calls.
+The `@open-game-system/store-bridge/testing` module provides several utilities to make testing components that use the store bridge straightforward and effective.
 
-### 📤 Creating Mock Bridges and Stores
+### Testing Utilities API Reference
 
-There are two main testing utilities:
+#### createMockStore
+
+Creates a mock store with a simplified implementation that can be used for testing.
 
 ```typescript
-// Import testing utilities
-import { 
-  createMockBridge, 
-  createMockStore
-} from '@open-game-system/store-bridge/testing';
-import { 
-  createBridgeContext,
-  BridgeProvider
-} from '@open-game-system/store-bridge/react';
-import type { BridgeStores, MyFeatureStore } from './types';
+import { createMockStore } from '@open-game-system/store-bridge/testing';
 
-// ✅ Creating a mock bridge (similar to the native bridge)
-const mockBridge = createMockBridge<BridgeStores>({
-  stores: {
-    myFeature: {
-      initialState: {
-        isActive: false,
-        status: 'idle',
-        sessionId: 'test-session'
-      }
-      // No need to provide a reducer in most test cases
+// Create a basic mock store with initial state
+const store = createMockStore<MyState, MyEvents>({
+  initialState: { count: 0, name: 'Test' }
+});
+
+// The store has the standard store interface:
+// - getState(): Returns the current state
+// - dispatch(event): Records the event but does not modify state
+// - subscribe(listener): Calls the listener with the state and returns an unsubscribe function
+```
+
+#### createMockStoreWithReducer
+
+Creates a mock store that includes a reducer function for more realistic state updates during testing.
+
+```typescript
+import { createMockStoreWithReducer } from '@open-game-system/store-bridge/testing';
+
+// Create a mock store with initial state and a reducer
+const store = createMockStoreWithReducer<CounterState, CounterEvents>({
+  initialState: { count: 0 },
+  reducer: (state, event) => {
+    switch (event.type) {
+      case 'INCREMENT':
+        return { ...state, count: state.count + 1 };
+      case 'DECREMENT':
+        return { ...state, count: state.count - 1 };
+      default:
+        return state;
     }
   }
 });
 
-// ✅ Creating an individual mock store
-const mockStore = createMockStore<MyFeatureStore['state'], MyFeatureStore['events']>({
-  isActive: false,
-  status: 'idle',
-  sessionId: 'test-session'
-});
-
-// 🔑 Mock stores provide a special produce method for easy state updates
-// This method is only available on mock stores (not on real stores)
-mockStore.produce(draft => {
-  draft.isActive = true;
-  draft.status = 'active';
-});
-
-// The above is equivalent to dispatching events that would trigger these changes,
-// but without needing to define and dispatch specific events
+// This store works like a real store:
+// - getState(): Returns the current state
+// - dispatch(event): Updates state using the reducer
+// - subscribe(listener): Notifies listener when state changes
 ```
 
-### 🔍 Basic React Testing Example
+#### createMockBridge
 
-Here's a typical React testing pattern:
+Creates a mock bridge for testing components that depend on a bridge.
 
 ```typescript
-describe('MyFeatureComponent', () => {
-  it('renders and handles events correctly', async () => {
-    // 1. Create a mock bridge with initial state
-    const mockBridge = createMockBridge<BridgeStores>({
-      stores: {
-        myFeature: {
-          initialState: {
-            isActive: false,
-            status: 'idle',
-            sessionId: 'test-123'
+import { createMockBridge } from '@open-game-system/store-bridge/testing';
+import type { AppStores } from './types';
+
+// Create a mock bridge with configuration
+const mockBridge = createMockBridge<AppStores>({
+  isSupported: true, // Configure whether the bridge reports as supported
+  stores: {
+    // Configure initial states and reducers for stores
+    counter: {
+      initialState: { count: 0 },
+      reducer: (state, event) => {
+        // Optional reducer for more realistic testing
+        if (event.type === 'INCREMENT') {
+          return { ...state, count: state.count + 1 };
+        }
+        return state;
+      }
+    },
+    user: {
+      initialState: { name: 'Test User', isLoggedIn: false }
+    }
+  }
+});
+
+// This mock bridge has the standard Bridge interface
+// - isSupported(): Returns the configured supported status
+// - getStore(key): Returns a mock store for the given key
+```
+
+#### createMockNativeBridge
+
+Creates a mock native bridge that includes the `produce` method for testing components that use the native bridge features.
+
+```typescript
+import { createMockNativeBridge } from '@open-game-system/store-bridge/testing';
+import type { AppStores } from './types';
+
+// Create a mock native bridge
+const mockNativeBridge = createMockNativeBridge<AppStores>({
+  stores: {
+    counter: {
+      initialState: { count: 0 },
+      reducer: (state, event) => {
+        // Handle events
+        return state;
+      }
+    }
+  }
+});
+
+// Additional native bridge features:
+// - produce(key, recipe): Update store state using an immutable recipe function
+await mockNativeBridge.produce('counter', draft => {
+  draft.count = 10;
+});
+```
+
+### Testing React Components
+
+Here's a complete example of how to test React components that use the bridge:
+
+```tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { createMockNativeBridge } from '@open-game-system/store-bridge/testing';
+import { BridgeContext } from '../src/contexts/bridge';
+import { CounterContext } from '../src/contexts/counter';
+import { CounterComponent } from '../src/components/Counter';
+import type { AppStores } from '../src/types';
+
+test('Counter component increments value correctly', async () => {
+  // Create a mock bridge with a counter store
+  const mockBridge = createMockNativeBridge<AppStores>({
+    stores: {
+      counter: {
+        initialState: { count: 5 },
+        reducer: (state, event) => {
+          if (event.type === 'INCREMENT') {
+            return { ...state, count: state.count + 1 };
           }
+          return state;
         }
       }
-    });
-    
-    // 2. Create the context
-    const MyFeatureContext = createBridgeContext<BridgeStores>('myFeature');
-    
-    // 3. Render with the mock bridge
-    render(
-      <BridgeProvider bridge={mockBridge}>
-        <MyFeatureContext.Initialized>
-          <MyFeatureComponent />
-        </MyFeatureContext.Initialized>
-      </BridgeProvider>
-    );
-    
-    // 4. Get store to verify or manipulate state
-    const store = await mockBridge.getStore('myFeature');
-    
-    // 5. Interact with component
-    const activateButton = screen.getByText('Activate');
-    userEvent.click(activateButton);
-    
-    // 6. Verify events were dispatched
-    expect(store.getState().isActive).toBe(true);
-    
-    // 7. You can also directly modify state for testing different states
-    store.produce(draft => {
-      draft.status = 'paused';
-    });
-    
-    // 8. Verify UI updated with new state
-    expect(screen.getByText('Status: Paused')).toBeInTheDocument();
+    }
   });
+  
+  // Get the store to observe state changes
+  const counterStore = await mockBridge.getStore('counter');
+  
+  // Render the component with the mock bridge
+  render(
+    <BridgeContext.Provider bridge={mockBridge}>
+      <CounterContext.Initialized>
+        <CounterComponent />
+      </CounterContext.Initialized>
+    </BridgeContext.Provider>
+  );
+  
+  // Initial state should be rendered
+  expect(screen.getByText('Count: 5')).toBeInTheDocument();
+  
+  // Click the increment button
+  fireEvent.click(screen.getByText('Increment'));
+  
+  // Updated state should be rendered
+  expect(screen.getByText('Count: 6')).toBeInTheDocument();
+  
+  // Store state should be updated
+  expect(counterStore.getState().count).toBe(6);
+  
+  // Test the produce method (native bridge feature)
+  await mockBridge.produce('counter', draft => {
+    draft.count = 10;
+  });
+  
+  // Component should reflect the produced state
+  expect(screen.getByText('Count: 10')).toBeInTheDocument();
 });
 ```
 
-### ⚙️ Store API Differences in Testing
+### Testing Components in Isolation
 
-Mock stores provide additional methods that make testing easier:
+For testing individual components without a bridge, you can directly provide a mock store:
 
-```typescript
-// Standard store methods (available in both real and mock stores)
-store.getState()    // Get current state
-store.dispatch()    // Dispatch an event
-store.subscribe()   // Subscribe to state changes
+```tsx
+import { render, screen } from '@testing-library/react';
+import { createMockStore } from '@open-game-system/store-bridge/testing';
+import { CounterDisplay } from '../src/components/CounterDisplay';
+import { CounterContext } from '../src/contexts/counter';
 
-// Testing-only methods (only available in mock stores)
-store.produce()     // Directly modify state using immer
-store.setState()    // Completely replace the current state
-store.resetState()  // Reset to initial state
-```
-
-The `produce` method is particularly useful for testing:
-
-```typescript
-// In a test:
-it('shows error state correctly', async () => {
-  // Set up component with the mock store
-  const { mockBridge } = setupTest();
-  const store = await mockBridge.getStore('myFeature');
-  
-  // Use produce to directly update state without dispatching events
-  store.produce(draft => {
-    draft.status = 'error';
-    draft.errorMessage = 'Connection failed';
+test('CounterDisplay shows the correct count', () => {
+  // Create a mock store with a specific state
+  const mockStore = createMockStore({
+    initialState: { count: 42 }
   });
   
-  // Now test that your UI responds correctly to this state
-  expect(screen.getByText('Error: Connection failed')).toBeInTheDocument();
+  // Render with the Provider and Initialized components
+  render(
+    <CounterContext.Provider store={mockStore}>
+      <CounterContext.Initialized>
+        <CounterDisplay />
+      </CounterContext.Initialized>
+    </CounterContext.Provider>
+  );
+  
+  // Check that the component shows the correct count
+  expect(screen.getByText('Count: 42')).toBeInTheDocument();
 });
 ```
 
-This approach makes tests:
-- **Simpler**: No need to mock complex event handlers or reducers
-- **More focused**: Test UI state reactions without testing event logic
-- **More maintainable**: Less likely to break when event handling changes
+### Testing Error Handling
+
+The testing utilities also allow you to test how your components handle error cases:
+
+```tsx
+import { render, screen } from '@testing-library/react';
+import { createMockBridge } from '@open-game-system/store-bridge/testing';
+import { BridgeContext } from '../src/contexts/bridge';
+import { FeatureComponent } from '../src/components/Feature';
+import type { AppStores } from '../src/types';
+
+test('FeatureComponent shows fallback UI when bridge is not supported', () => {
+  // Create a mock bridge that is not supported
+  const mockBridge = createMockBridge<AppStores>({
+    isSupported: false
+  });
+  
+  render(
+    <BridgeContext.Provider bridge={mockBridge}>
+      <FeatureComponent />
+    </BridgeContext.Provider>
+  );
+  
+  // Check that the fallback UI is shown
+  expect(screen.getByText('This feature requires the OpenGame App')).toBeInTheDocument();
+  
+  // Check that the main feature content is not shown
+  expect(screen.queryByText('Feature Content')).not.toBeInTheDocument();
+});
+```
 
 ## 📦 Package Structure
 
+The store-bridge library is organized into several main directories:
+
+- `/src` - Source code for the library
+- `/dist` - Generated distribution files (after building)
+- `/coverage` - Code coverage reports (after running tests)
+
+## 🚧 Development Status
+
+- ✅ Core API design and type definitions complete
+- ✅ React integration components implemented
+- ✅ JSON Patch-based synchronization
+- ⚠️ Limited test coverage - expanding tests
+- 🔜 Improved error handling and debug logging
+- 🔜 Performance optimizations
+
+## 🛠️ Building the Package
+
+To build the package for local development:
+
+```bash
+npm install    # Install dependencies
+npm run build  # Build the TypeScript code
 ```
-@open-game-system/store-bridge/
-├── client        # Web client implementations
-├── native        # React Native implementations
-├── react         # React integration with context providers
-├── testing       # Testing utilities
-├── types         # TypeScript type definitions
-└── utils         # Shared utilities including produce function
-```
+
+## 📄 License
+
+MIT

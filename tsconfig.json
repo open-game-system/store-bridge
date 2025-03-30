@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "sourceMap": true,
+    "composite": true,
+    "lib": ["DOM", "ESNext"],
+    "declaration": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@open-game-system/store-bridge": ["./src/index.ts"],
+      "@open-game-system/store-bridge/client": ["./src/client/index.ts"],
+      "@open-game-system/store-bridge/native": ["./src/native/index.ts"],
+      "@open-game-system/store-bridge/react": ["./src/react/index.ts"],
+      "@open-game-system/store-bridge/testing": ["./src/testing/index.ts"],
+      "@open-game-system/store-bridge/utils": ["./src/utils/index.ts"],
+      "@open-game-system/store-bridge/types": ["./src/types/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
