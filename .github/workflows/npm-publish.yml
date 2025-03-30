@@ -80,6 +80,7 @@ jobs:
               };
             }
             pkg.publishConfig = {
+              access: "public",
               registry: "https://npm.pkg.github.com"
             };
             require("fs").writeFileSync("./package.json", JSON.stringify(pkg, null, 2));
