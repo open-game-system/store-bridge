@@ -17,9 +17,9 @@
     "dev": "tsc -w",
     "format": "biome format . --write",
     "lint": "biome check .",
-    "test": "vitest run --no-threads",
-    "test:coverage": "vitest run --coverage --no-threads",
-    "test:watch": "vitest --no-threads"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "exports": {
     "./client": "./src/client/index.ts",
@@ -35,10 +35,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.3",
-    "@biomejs/cli-linux-x64": "1.5.3",
-    "@biomejs/cli-darwin-x64": "1.5.3",
-    "@biomejs/cli-darwin-arm64": "1.5.3",
-    "@rollup/rollup-linux-x64-gnu": "4.13.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.2.1",
     "@types/jest": "^29.5.4",
