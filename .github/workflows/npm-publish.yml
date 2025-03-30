@@ -44,13 +44,20 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           # Get base version from package.json
-          BASE_VERSION=$(node -p "require('./package.json').version")
-          COMMIT_HASH=$(git rev-parse --short HEAD)
-          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Extract major version (first component)
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          
+          # Generate today's date in YYYYMMDD format 
+          DATE=$(date +'%Y%m%d')
           
           # PR workflow - include PR number in version and tag
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          VERSION="${BASE_VERSION}-pr.${PR_NUMBER}.${TIMESTAMP}.${COMMIT_HASH}"
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          
+          # Format: major.date.patch-pr.number.hash
+          VERSION="${MAJOR}.${DATE}.0-pr.${PR_NUMBER}.${COMMIT_HASH}"
           NPM_TAG="pr-${PR_NUMBER}"
           
           npm version $VERSION --no-git-tag-version

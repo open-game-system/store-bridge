@@ -16,6 +16,40 @@ By participating in this project, you agree to maintain a respectful and inclusi
 6. **Push** your changes to your fork
 7. **Submit a pull request** to the main repository
 
+## Versioning
+
+We follow a Cloudflare-inspired versioning scheme with the format: `major.YYYYMMDD.patch`
+
+- **major**: Major version number incremented for breaking changes
+- **YYYYMMDD**: Date of the release in 8-digit format (e.g., 20240516 for May 16, 2024)
+- **patch**: Counter for multiple releases on the same day (0, 1, 2, etc.)
+
+### Version Examples
+
+- `1.20240516.0` - First release on May 16, 2024
+- `1.20240516.1` - Second release on May 16, 2024
+- `1.20240517.0` - First release on May 17, 2024
+
+### Automated Versioning
+
+Our CI pipeline automatically handles versioning:
+
+- **Main branch**: Each successful merge to main triggers a version bump
+- **PR builds**: PRs are published with a format like `1.20240516.0-pr.123.a1b2c3d` (PR number and commit hash included)
+
+### Installing Specific Versions
+
+```bash
+# Latest stable version
+npm install @open-game-system/store-bridge
+
+# Version from a specific PR
+npm install @open-game-system/store-bridge@pr-123
+
+# Exact version
+npm install @open-game-system/store-bridge@1.20240516.0
+```
+
 ## Development Setup
 
 ```bash

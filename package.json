@@ -1,6 +1,6 @@
 {
   "name": "@open-game-system/store-bridge",
-  "version": "0.1.0",
+  "version": "1.20250330.0",
   "description": "A universal bridge for web games and the OpenGame App.",
   "main": "src/index.ts",
   "types": "src/index.ts",
