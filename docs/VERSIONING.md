@@ -1,6 +1,6 @@
 # Versioning Strategy for @open-game-system/store-bridge
 
-This document explains our versioning strategy, which is inspired by Cloudflare's approach to package versioning.
+This document explains our date-based versioning strategy for package releases.
 
 ## Version Format
 

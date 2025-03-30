@@ -18,7 +18,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ## Versioning
 
-We follow a Cloudflare-inspired versioning scheme with the format: `major.YYYYMMDD.patch`
+We follow a date-based versioning scheme with the format: `major.YYYYMMDD.patch`
 
 - **major**: Major version number incremented for breaking changes
 - **YYYYMMDD**: Date of the release in 8-digit format (e.g., 20240516 for May 16, 2024)
