@@ -73,12 +73,6 @@ jobs:
           # Temporarily update package.json to work with GitHub Packages
           node -e '
             const pkg = require("./package.json");
-            if (!pkg.repository || typeof pkg.repository === "string") {
-              pkg.repository = {
-                type: "git",
-                url: "https://github.com/open-game-system/store-bridge.git"
-              };
-            }
             pkg.publishConfig = {
               access: "public",
               registry: "https://npm.pkg.github.com"
@@ -87,7 +81,7 @@ jobs:
           '
       
       - name: Publish PR version to GitHub Packages
-        run: npm publish --tag ${{ steps.version.outputs.npm_tag }}
+        run: npm publish --tag ${{ steps.version.outputs.npm_tag }} --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
@@ -125,6 +119,9 @@ jobs:
   publish-main:
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -165,6 +162,6 @@ jobs:
           '
       
       - name: Publish main version to npm
-        run: npm publish --tag ${{ steps.main_version.outputs.npm_tag }}
+        run: npm publish --tag ${{ steps.main_version.outputs.npm_tag }} --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
