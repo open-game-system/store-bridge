@@ -1,0 +1,90 @@
+name: Publish Package to npm
+
+on:
+  # Main branch trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'tsconfig.json'
+  
+  # PR branch trigger
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'tsconfig.json'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Generate version
+        id: version
+        run: |
+          # Get base version from package.json
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          
+          # DIFFERENT VERSIONING BASED ON WORKFLOW TYPE
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # PR workflow - include PR number in version and tag
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            VERSION="${BASE_VERSION}-pr.${PR_NUMBER}.${TIMESTAMP}.${COMMIT_HASH}"
+            NPM_TAG="pr-${PR_NUMBER}"
+          else
+            # Main workflow - use dev tag
+            VERSION="${BASE_VERSION}-dev.${TIMESTAMP}.${COMMIT_HASH}"
+            NPM_TAG="dev"
+          fi
+          
+          npm version $VERSION --no-git-tag-version
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Publish to npm
+        run: npm publish --tag ${{ steps.version.outputs.npm_tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: Comment with installation instructions
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = '${{ steps.version.outputs.version }}';
+            const tag = '${{ steps.version.outputs.npm_tag }}';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📦 Published version \`${version}\` to npm.
+              
+              Install with:
+              \`\`\`bash
+              npm install @open-game-system/store-bridge@${tag}
+              \`\`\`
+              `
+            }); 
