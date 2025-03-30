@@ -13,7 +13,7 @@ import { isWebViewEnvironment } from '../utils';
  * @returns A bridge instance
  */
 export function createBridge<TStores extends Record<string, StoreDefinition<any, any>>>(
-  config?: BridgeConfig,
+  config?: BridgeConfig
 ): Bridge<TStores> {
   // Check if we're in a test environment
   if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
@@ -87,7 +87,7 @@ export function createBridge<TStores extends Record<string, StoreDefinition<any,
                     JSON.stringify({
                       type: 'REQUEST_FULL_STATE',
                       key: message.key,
-                    }),
+                    })
                   );
                 }
               }
@@ -114,14 +114,14 @@ export function createBridge<TStores extends Record<string, StoreDefinition<any,
             const store = createStore<TStores[K]['state'], TStores[K]['events']>(
               key as string,
               supported,
-              debug,
+              debug
             );
 
             // Store the instance for message handling
             storeInstances.set(key as string, store);
 
             resolve(store);
-          },
+          }
         );
         storePromises.set(key, storePromise);
       }
@@ -138,7 +138,7 @@ export function createBridge<TStores extends Record<string, StoreDefinition<any,
 export function createStore<State, Event>(
   key?: string,
   isSupported = false,
-  debug = false,
+  debug = false
 ): Store<State, Event> {
   // Check if we're in a test environment
   if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
@@ -235,7 +235,7 @@ export function createStore<State, Event>(
             type: 'EVENT',
             key,
             event,
-          }),
+          })
         );
       } else if (debug) {
         console.warn('Cannot dispatch event: Native bridge not available');

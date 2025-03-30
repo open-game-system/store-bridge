@@ -298,7 +298,7 @@ describe('Native Bridge', () => {
       expect(patches.some((p: any) => p.op === 'replace' && p.path === '/count')).toBe(true);
       expect(patches.some((p: any) => p.op === 'add' && p.path === '/items/0')).toBe(true);
       expect(patches.some((p: any) => p.op === 'replace' && p.path === '/nested/property')).toBe(
-        true,
+        true
       );
     }
   });

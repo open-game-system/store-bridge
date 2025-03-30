@@ -45,7 +45,7 @@ describe('createBridgeContext', () => {
     const { container } = render(
       <BridgeContext.Provider>
         <div>Bridge Provider Content</div>
-      </BridgeContext.Provider>,
+      </BridgeContext.Provider>
     );
 
     expect(container.textContent).toContain('Bridge Provider Content');
@@ -60,7 +60,7 @@ describe('createBridgeContext', () => {
         <BridgeContext.Supported>
           <div>Supported Content</div>
         </BridgeContext.Supported>
-      </BridgeContext.Provider>,
+      </BridgeContext.Provider>
     );
 
     expect(container.textContent).toContain('Supported Content');

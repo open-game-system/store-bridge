@@ -34,7 +34,7 @@ export interface NativeBridgeConfig<TStores extends Record<string, StoreDefiniti
  * @returns A native bridge instance
  */
 export function createNativeBridge<TStores extends Record<string, StoreDefinition<any, any>>>(
-  config?: NativeBridgeConfig<TStores>,
+  config?: NativeBridgeConfig<TStores>
 ): NativeBridge<TStores> {
   // Check if we're in a test environment
   if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
@@ -88,7 +88,7 @@ export function createNativeBridge<TStores extends Record<string, StoreDefinitio
       },
       produce: <K extends keyof TStores>(
         key: K,
-        producer: (draft: TStores[K]['state']) => void,
+        producer: (draft: TStores[K]['state']) => void
       ) => {
         // Create a draft state and apply producer
         const initialState = config?.stores?.[key]?.initialState || { count: 0, name: 'Test' };
@@ -174,7 +174,7 @@ export function createNativeBridge<TStores extends Record<string, StoreDefinitio
   // Function to update WebViews with JSON Patch for efficient updates
   const updateWebViewsWithPatch = <K extends keyof TStores>(
     key: K,
-    newState: TStores[K]['state'],
+    newState: TStores[K]['state']
   ) => {
     const stringKey = String(key);
 

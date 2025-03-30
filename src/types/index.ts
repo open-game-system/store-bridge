@@ -32,7 +32,7 @@ export interface BridgeConfig {
 export interface Bridge<TStores extends Record<string, StoreDefinition<any, any>>> {
   isSupported(): boolean;
   getStore<K extends keyof TStores>(
-    key: K,
+    key: K
   ): Promise<Store<TStores[K]['state'], TStores[K]['events']>>;
 }
 

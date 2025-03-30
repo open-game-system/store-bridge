@@ -1,28 +1,14 @@
 /// <reference types="vitest" />
 
-interface MockReactNative {
-  NativeModules: {
-    StoreBridge: {
-      initialize: import('vitest').Mock;
-      sendEvent: import('vitest').Mock;
-      subscribe: import('vitest').Mock;
-    };
-  };
-  DeviceEventEmitter: {
-    addListener: import('vitest').Mock;
-    removeAllListeners: import('vitest').Mock;
-  };
-}
+import type { MockReactNative } from './types';
 
-// Extend the NodeJS.Global interface to include our custom additions
 declare global {
-  var mockReactNative: MockReactNative;
+  // eslint-disable-next-line no-var
+  let mockReactNative: MockReactNative;
 
   interface Window {
     ReactNativeWebView?: {
-      postMessage: (data: string) => void;
+      postMessage: (message: string) => void;
     };
   }
 }
-
-export {};

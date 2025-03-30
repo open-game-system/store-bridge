@@ -30,7 +30,7 @@ function useSyncExternalStoreWithSelector<Snapshot, Selection>(
   getSnapshot: () => Snapshot,
   getServerSnapshot: undefined | null | (() => Snapshot),
   selector: (snapshot: Snapshot) => Selection,
-  isEqual: (a: Selection, b: Selection) => boolean = defaultCompare,
+  isEqual: (a: Selection, b: Selection) => boolean = defaultCompare
 ): Selection {
   // Memoize selector logic
   const [getSelection, getServerSelection] = useMemo(() => {
@@ -88,7 +88,7 @@ function useSyncExternalStoreWithSelector<Snapshot, Selection>(
         }
       });
     },
-    [subscribe, getSelection, isEqual],
+    [subscribe, getSelection, isEqual]
   );
 
   // Use React's useSyncExternalStore with our optimized functions
@@ -225,7 +225,7 @@ export function createBridgeContext<
       // Always throw if store is not available - both in dev and prod
       if (!store) {
         throw new Error(
-          `Cannot use ${displayName}.useStore() outside of a <${displayName}.Initialized> component.`,
+          `Cannot use ${displayName}.useStore() outside of a <${displayName}.Initialized> component.`
         );
       }
 
@@ -238,7 +238,7 @@ export function createBridgeContext<
       // Always throw if store is not available - both in dev and prod
       if (!store) {
         throw new Error(
-          `Cannot use ${displayName}.useSelector() outside of a <${displayName}.Initialized> component.`,
+          `Cannot use ${displayName}.useSelector() outside of a <${displayName}.Initialized> component.`
         );
       }
 
@@ -248,7 +248,7 @@ export function createBridgeContext<
         store.getState,
         null,
         selector,
-        defaultCompare,
+        defaultCompare
       );
     }
 

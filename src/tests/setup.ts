@@ -51,7 +51,7 @@ console.error = (...args) => {
   ];
 
   const shouldSuppress = suppressPatterns.some((pattern) =>
-    args.some((arg) => typeof arg === 'string' && pattern.test(arg)),
+    args.some((arg) => typeof arg === 'string' && pattern.test(arg))
   );
 
   if (!shouldSuppress) {

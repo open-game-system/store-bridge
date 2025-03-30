@@ -123,7 +123,7 @@ export function createMockStoreWithReducer<State, Event>(config: {
  * @returns A mock bridge instance
  */
 export function createMockBridge<TStores extends Record<string, StoreDefinition<any, any>>>(
-  config: MockBridgeConfig<TStores> = {},
+  config: MockBridgeConfig<TStores> = {}
 ): Bridge<TStores> {
   const supported = config.isSupported ?? true;
   const storeCache = new Map<keyof TStores, Store<any, any>>();
@@ -141,7 +141,7 @@ export function createMockBridge<TStores extends Record<string, StoreDefinition<
                 initialState: storeConfig.initialState as TStores[K]['state'],
                 reducer: storeConfig.reducer as (
                   state: TStores[K]['state'],
-                  event: TStores[K]['events'],
+                  event: TStores[K]['events']
                 ) => TStores[K]['state'],
               })
             : createMockStore<TStores[K]['state'], TStores[K]['events']>({
@@ -158,7 +158,7 @@ export function createMockBridge<TStores extends Record<string, StoreDefinition<
         }
       }
       return Promise.resolve(
-        storeCache.get(key) as Store<TStores[K]['state'], TStores[K]['events']>,
+        storeCache.get(key) as Store<TStores[K]['state'], TStores[K]['events']>
       );
     },
   };
@@ -171,7 +171,7 @@ export function createMockBridge<TStores extends Record<string, StoreDefinition<
  * @returns A mock native bridge instance
  */
 export function createMockNativeBridge<TStores extends Record<string, StoreDefinition<any, any>>>(
-  config: MockBridgeConfig<TStores> = {},
+  config: MockBridgeConfig<TStores> = {}
 ): NativeBridge<TStores> {
   const bridge = createMockBridge<TStores>(config);
   const storeCache = new Map<keyof TStores, Store<any, any>>();
@@ -180,7 +180,7 @@ export function createMockNativeBridge<TStores extends Record<string, StoreDefin
     ...bridge,
     produce: async <K extends keyof TStores>(
       key: K,
-      producer: (draft: TStores[K]['state']) => void,
+      producer: (draft: TStores[K]['state']) => void
     ) => {
       // Get the store
       let store: Store<TStores[K]['state'], TStores[K]['events']>;
