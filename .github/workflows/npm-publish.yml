@@ -1,16 +1,9 @@
 name: Publish Package
 
 on:
-  # Main branch trigger after version-bump
   workflow_run:
-    workflows: ["Auto Version Bump"]
+    workflows: ["Auto Version Bump", "CI"]
     branches: [main]
-    types:
-      - completed
-  
-  # PR branch trigger after CI
-  workflow_run:
-    workflows: ["CI"]
     types:
       - completed
 
