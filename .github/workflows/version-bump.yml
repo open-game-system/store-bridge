@@ -1,0 +1,73 @@
+name: Auto Version Bump
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    # Only run if the CI workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Generate new version
+        id: version
+        run: |
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Extract major version (first component)
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          
+          # Generate today's date in YYYYMMDD format
+          DATE=$(date +'%Y%m%d')
+          
+          # Get the current date component from version
+          CURRENT_DATE=$(echo $CURRENT_VERSION | cut -d. -f2)
+          
+          # If date has changed, reset patch to 0, otherwise increment it
+          if [ "$DATE" != "$CURRENT_DATE" ]; then
+            PATCH=0
+          else
+            CURRENT_PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+            PATCH=$((CURRENT_PATCH + 1))
+          fi
+          
+          # Create the new version
+          NEW_VERSION="${MAJOR}.${DATE}.${PATCH}"
+          
+          echo "Generated new version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          # Update package.json with new version
+          npm version $NEW_VERSION --no-git-tag-version
+      
+      - name: Commit version bump
+        run: |
+          git add package.json
+          git commit -m "ci: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
+          git push
+          git push --tags 

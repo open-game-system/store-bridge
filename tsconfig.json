@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
     "target": "es2018",
-    "module": "preserve",
-    "moduleResolution": "bundler",
+    "module": "esnext",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "sourceMap": true,
-    "composite": true,
     "lib": ["DOM", "ESNext"],
     "declaration": true,
     "baseUrl": ".",

@@ -1,6 +1,10 @@
 name: CI
 
-on: pull_request
+on: 
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -18,15 +22,18 @@ jobs:
         uses: biomejs/setup-biome@v2
         with:
           version: 1.5.3
-      
+
       - name: Install dependencies
         run: npm ci
+      
+      - name: Check formatting and linting
+        run: biome check . --files-ignore-unknown=true
       
       - name: Build
         run: npm run build
       
-      - name: Lint
-        run: npm run lint
-      
+      - name: Install Rollup native dependency
+        run: npm install --save-dev @rollup/rollup-linux-x64-gnu
+
       - name: Test
         run: npm run test
